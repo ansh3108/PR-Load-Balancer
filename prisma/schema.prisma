@@ -11,11 +11,27 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+model User {
+  id          String   @id @default(cuid())
+  githubLogin String   @unique
+  reviews     Review[]
+}
 
-    @@index([name])
+model PullRequest {
+  id          String   @id
+  repo        String
+  title       String
+  authorLogin String
+  openedAt    DateTime
+  reviews     Review[]
+}
+
+model Review {
+  id            String      @id @default(cuid())
+  pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id])
+  pullRequestId String
+  reviewer      User        @relation(fields: [reviewerId], references: [id])
+  reviewerId    String
+  requestedAt   DateTime
+  completedAt   DateTime?
 }

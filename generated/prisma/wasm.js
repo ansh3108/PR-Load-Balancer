@@ -93,11 +93,25 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
-exports.Prisma.PostScalarFieldEnum = {
+exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
-  name: 'name',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  githubLogin: 'githubLogin'
+};
+
+exports.Prisma.PullRequestScalarFieldEnum = {
+  id: 'id',
+  repo: 'repo',
+  title: 'title',
+  authorLogin: 'authorLogin',
+  openedAt: 'openedAt'
+};
+
+exports.Prisma.ReviewScalarFieldEnum = {
+  id: 'id',
+  pullRequestId: 'pullRequestId',
+  reviewerId: 'reviewerId',
+  requestedAt: 'requestedAt',
+  completedAt: 'completedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -110,9 +124,16 @@ exports.Prisma.QueryMode = {
   insensitive: 'insensitive'
 };
 
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
 
 exports.Prisma.ModelName = {
-  Post: 'Post'
+  User: 'User',
+  PullRequest: 'PullRequest',
+  Review: 'Review'
 };
 /**
  * Create the Client
@@ -161,13 +182,13 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Post {\n  id        Int      @id @default(autoincrement())\n  name      String\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@index([name])\n}\n",
-  "inlineSchemaHash": "4dfee2d805d63053d5ae63a6ff65a5c68e353713bdd4147909d9158ea83d8e0f",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id          String   @id @default(cuid())\n  githubLogin String   @unique\n  reviews     Review[]\n}\n\nmodel PullRequest {\n  id          String   @id\n  repo        String\n  title       String\n  authorLogin String\n  openedAt    DateTime\n  reviews     Review[]\n}\n\nmodel Review {\n  id            String      @id @default(cuid())\n  pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id])\n  pullRequestId String\n  reviewer      User        @relation(fields: [reviewerId], references: [id])\n  reviewerId    String\n  requestedAt   DateTime\n  completedAt   DateTime?\n}\n",
+  "inlineSchemaHash": "6397d3cbb172e46c62fd99270228dbdc63d2281f7b8d2d9d4e825ad6c9426370",
   "copyEngine": true
 }
 config.dirname = '/'
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Post\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"githubLogin\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"reviews\",\"kind\":\"object\",\"type\":\"Review\",\"relationName\":\"ReviewToUser\"}],\"dbName\":null},\"PullRequest\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"repo\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"authorLogin\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"openedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"reviews\",\"kind\":\"object\",\"type\":\"Review\",\"relationName\":\"PullRequestToReview\"}],\"dbName\":null},\"Review\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"pullRequest\",\"kind\":\"object\",\"type\":\"PullRequest\",\"relationName\":\"PullRequestToReview\"},{\"name\":\"pullRequestId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"reviewer\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"ReviewToUser\"},{\"name\":\"reviewerId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"requestedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"completedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
 config.engineWasm = {
   getRuntime: async () => require('./query_engine_bg.js'),
