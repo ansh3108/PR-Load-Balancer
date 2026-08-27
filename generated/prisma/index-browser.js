@@ -121,11 +121,25 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
-exports.Prisma.PostScalarFieldEnum = {
+exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
-  name: 'name',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  githubLogin: 'githubLogin'
+};
+
+exports.Prisma.PullRequestScalarFieldEnum = {
+  id: 'id',
+  repo: 'repo',
+  title: 'title',
+  authorLogin: 'authorLogin',
+  openedAt: 'openedAt'
+};
+
+exports.Prisma.ReviewScalarFieldEnum = {
+  id: 'id',
+  pullRequestId: 'pullRequestId',
+  reviewerId: 'reviewerId',
+  requestedAt: 'requestedAt',
+  completedAt: 'completedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -138,9 +152,16 @@ exports.Prisma.QueryMode = {
   insensitive: 'insensitive'
 };
 
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
 
 exports.Prisma.ModelName = {
-  Post: 'Post'
+  User: 'User',
+  PullRequest: 'PullRequest',
+  Review: 'Review'
 };
 
 /**
