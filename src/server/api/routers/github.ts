@@ -14,4 +14,10 @@ export const githubRouter = createTRPCRouter({
 
       return prs;
     }),
+    
+    syncRepo: publicProcedure
+      .input(z.object({ owner: z.string(), repo: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const prs = await getOpenPRs(input.owner, input.repo);
+      }),
 });
