@@ -27,13 +27,32 @@ export const githubRouter = createTRPCRouter({
               id: pr.id,
               repo: `${input.owner}/${input.repo}`,
               title: pr.title,
-              authorLogin: pr.authorLogin,
+              authorLogin: pr.authorLogin ?? "unknown_user",
               openedAt: pr.openedAt,
             },
           });
 
           for(const reviewerLogin of pr.requestedReviewers) {
-            
+            await ctx.db.user.upsert({
+              where: { githubLogin: reviewerLogin },
+              update: {},
+              create: {
+                id: reviewerLogin,
+                githubLogin: reviewerLogin,
+              },
+            });
+            await ctx.db.review.upsert({
+              where: {
+                id: `${pr.id}-${reviewerLogin}`,
+              },
+              update: {},
+              create: {
+                id: `${pr.id}-${reviewerLogin}`,
+                pullRequestId: pr.id,
+                reviewerId: reviewerLogin,
+                requestedAt: new Date(),
+              },
+            });
           }
         }
       }),

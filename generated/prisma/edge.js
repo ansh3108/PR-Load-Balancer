@@ -146,7 +146,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\Ansh Kumar\\Documents\\Codes\\load-balancer\\generated\\prisma",
+      "value": "/Users/anshk/Documents/Codes/load-balancer/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -155,12 +155,12 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "darwin-arm64",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\Ansh Kumar\\Documents\\Codes\\load-balancer\\prisma\\schema.prisma",
+    "sourceFilePath": "/Users/anshk/Documents/Codes/load-balancer/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -174,6 +174,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
