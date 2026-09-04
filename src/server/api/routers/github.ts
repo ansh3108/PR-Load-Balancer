@@ -19,5 +19,22 @@ export const githubRouter = createTRPCRouter({
       .input(z.object({ owner: z.string(), repo: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const prs = await getOpenPRs(input.owner, input.repo);
+        for (const pr of prs) {
+          await ctx.db.pullRequest.upsert({
+            where:{ id: pr.id },
+            update: { title: pr.title },
+            create: {
+              id: pr.id,
+              repo: `${input.owner}/${input.repo}`,
+              title: pr.title,
+              authorLogin: pr.authorLogin,
+              openedAt: pr.openedAt,
+            },
+          });
+
+          for(const reviewerLogin of pr.requestedReviewers) {
+            
+          }
+        }
       }),
 });
