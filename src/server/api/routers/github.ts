@@ -56,4 +56,22 @@ export const githubRouter = createTRPCRouter({
           }
         }
       }),
+
+      getLoadScores: publicProcedure.query(async ({ ctx }) => {
+        const userWithScores = await ctx.db.user.findMany({
+          include: {
+            _count: {
+              select: { reviews: true },
+            },
+          },
+
+          orderBy: {
+            reviews: {
+              _count: 'desc',
+            },
+          },
+        });
+
+        return userWithScores;
+      }),
 });
