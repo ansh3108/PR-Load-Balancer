@@ -4,27 +4,26 @@ import { api } from "~/trpc/react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
-
   const { data: loadScores, isLoading } = api.github.getLoadScores.useQuery();
 
   const syncRepoMutation = api.github.syncRepo.useMutation({
-    onSuccess: () => alert("Sync complete! Check Prisma Studio."),
-    onError: () => alert(`Error: ${err.message}`),
+    onSuccess: () => alert("SYSTEM_SYNC_COMPLETE. Check Prisma Studio."),
+    onError: (err) => alert(`ERR: ${err.message}`),
   });
 
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
-    const interval = setInterval(() => setSeconds(s => s+1), 1000);
+    const interval = setInterval(() => setSeconds(s => s + 1), 1000);
     return () => clearInterval(interval);
   }, []);
 
   const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
-    return `${m}m, ${s}s`;
+    return `${m}m ${s}s`;
   };
 
-return (
+  return (
     <main className="min-h-screen bg-black text-green-500 font-mono p-8 selection:bg-green-900">
       <div className="max-w-3xl mx-auto border border-green-500 p-6 rounded-sm shadow-[0_0_15px_rgba(34,197,94,0.15)]">
         
@@ -32,7 +31,7 @@ return (
         
         <div className="mb-8 border-b border-green-500/50 pb-6">
           <button 
-            className="bg-green-950 hover:bg-green-900 text-green-400 border border-green-500 py-1 px-4 rounded-sm disabled:opacity-50 transition-colors"
+            className="bg-green-950 hover:bg-green-900 text-green-400 border border-green-500 py-1 px-4 rounded-sm disabled:opacity-50 transition-colors cursor-pointer"
             onClick={() => syncRepoMutation.mutate({ owner: "vercel", repo: "next.js" })}
             disabled={syncRepoMutation.isPending}
           >
@@ -53,7 +52,7 @@ return (
                   
                   <span className="flex items-center gap-3">
                     <span className="opacity-70 text-sm mt-1">ASSIGNED:</span>
-                    <span className="text-2xl font-bold">{user._count.reviews}</span>
+                    <span className="text-2xl font-bold text-green-400">{user._count.reviews}</span>
                     <span className="opacity-70 text-sm mt-1">PR(s)</span>
                   </span>
                 </div>
