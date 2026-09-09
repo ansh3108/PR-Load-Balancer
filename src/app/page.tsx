@@ -2,16 +2,22 @@
 
 import { api } from "~/trpc/react";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function Home() {
-  const { data: loadScores, isLoading, refetch } = api.github.getLoadScores.useQuery();
+  const [repoInput, setRepoInput] = useState("vercel/next.js");
+  const [activeRepo, setActiveRepo] = useState({ owner: "vercel", repo: "next.js" });
+
+  
+  const { data: loadScores, isLoading, refetch } = api.github.getLoadScores.useQuery(activeRepo);
 
   const syncRepoMutation = api.github.syncRepo.useMutation({
     onSuccess: async () => {
       await refetch();
+      toast.success("Repository synced successfully!")
     },
     onError: (err) => {
-      alert(`Sync failed: ${err.message}`);
+      toast.success(`Sync failed: ${err.message}`);
     },
   });
 
@@ -34,26 +40,45 @@ export default function Home() {
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">PR Load Balancer</h1>
-            <p className="text-sm text-slate-500 mt-1">Real-time review distribution for vercel/next.js</p>
+            <p className="text-sm text-slate-500 mt-1">Real-time review distribution for your repositories</p>
           </div>
           
-          <button 
-            onClick={() => syncRepoMutation.mutate({ owner: "vercel", repo: "next.js" })}
-            disabled={syncRepoMutation.isPending}
-            className="relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white transition-all bg-slate-900 border border-transparent rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto shadow-sm cursor-pointer"
-          >
-            {syncRepoMutation.isPending ? (
-              <span className="flex items-center gap-2">
-                <svg className="w-4 h-4 animate-spin text-white/70" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Syncing...
-              </span>
-            ) : (
-              "Sync Repository"
-            )}
-          </button>
+          <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+            <input
+              type="text"
+              value={repoInput}
+              onChange={(e) => setRepoInput(e.target.value)}
+              placeholder="owner/repo"
+              className="w-full md:w-56 px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-colors"
+            />
+            
+            <button 
+              onClick={() => {
+                const [owner, repo] = repoInput.split("/");
+                if (owner && repo) {
+                  const targetRepo = { owner: owner.trim(), repo: repo.trim() };
+                  setActiveRepo(targetRepo);
+                } else {
+                  toast.warning("Please use the format: owner/repo");
+                }
+              }}
+              disabled={syncRepoMutation.isPending || !repoInput.includes("/")}
+              className="relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white transition-all bg-slate-900 border border-transparent rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto shadow-sm cursor-pointer"
+            >
+              {syncRepoMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4 animate-spin text-white/70" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Syncing...
+                </span>
+              ) : (
+                "Sync Repository"
+              )}
+            </button>
+          </div>
+
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">

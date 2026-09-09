@@ -57,21 +57,36 @@ export const githubRouter = createTRPCRouter({
         }
       }),
 
-      getLoadScores: publicProcedure.query(async ({ ctx }) => {
+    getLoadScores: publicProcedure
+      .input(z.object({ owner: z.string(), repo: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const repoFullName = `${input.owner}/${input.repo}`;
+
         const userWithScores = await ctx.db.user.findMany({
+          where: {
+            reviews: {
+              some: {
+                pullRequest: {
+                  repo: repoFullName,
+                },
+              },
+            },
+          },
           include: {
             _count: {
-              select: { reviews: true },
+              select: {
+                reviews:{
+                  where: {
+                    pullRequest: {
+                      repo: repoFullName,
+                    },
+                  },
+                },
+              },
             },
           },
+        }); 
 
-          orderBy: {
-            reviews: {
-              _count: 'desc',
-            },
-          },
-        });
-
-        return userWithScores;
-      }),
-});
+        return userWithScores.sort((a, b) => b._count.reviews - a._count.reviews);
+      }), 
+}); 
