@@ -1,6 +1,6 @@
 import { Octokit } from "octokit";
 
-export const octokit = new Octokit({
+const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN,
 });
 
@@ -15,7 +15,7 @@ export async function getOpenPRs(owner:string, repo:string) {
 return allPrs.map((pr) => ({
     id: pr.id.toString(), 
     title: pr.title,
-    authorLogin: pr.user?.login ?? "unknown",
+    authorLogin: pr.user?.login ?? "unknown_user",
     openedAt: new Date(pr.created_at),
     requestedReviewers: pr.requested_reviewers?.map((reviewer) => reviewer.login) ?? [],
 }));

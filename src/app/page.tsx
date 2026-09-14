@@ -3,6 +3,7 @@
 import { api } from "~/trpc/react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { error } from "next/dist/build/output/log";
 
 export default function Home() {
   const [repoInput, setRepoInput] = useState("vercel/next.js");
@@ -11,15 +12,7 @@ export default function Home() {
   
   const { data: loadScores, isLoading, refetch } = api.github.getLoadScores.useQuery(activeRepo);
 
-  const syncRepoMutation = api.github.syncRepo.useMutation({
-    onSuccess: async () => {
-      await refetch();
-      toast.success("Repository synced successfully!")
-    },
-    onError: (err) => {
-      toast.success(`Sync failed: ${err.message}`);
-    },
-  });
+  const syncRepoMutation = api.github.syncRepo.useMutation();
 
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
@@ -58,6 +51,16 @@ export default function Home() {
                 if (owner && repo) {
                   const targetRepo = { owner: owner.trim(), repo: repo.trim() };
                   setActiveRepo(targetRepo);
+
+                  toast.promise(syncRepoMutation.mutateAsync(targetRepo), {
+                    loading: `Syncing ${targetRepo.owner}/${targetRepo.repo}...`,
+                    success: () => {
+                      refetch();
+                      return "Repository synced successfully!";
+                    },
+                    error: (err) => `Sync failed: ${err.message}`,
+                  });
+                  
                 } else {
                   toast.warning("Please use the format: owner/repo");
                 }
