@@ -54,9 +54,9 @@ export default function Home() {
 
                   toast.promise(syncRepoMutation.mutateAsync(targetRepo), {
                     loading: `Syncing ${targetRepo.owner}/${targetRepo.repo}...`,
-                    success: () => {
+                    success: (data) => {
                       refetch();
-                      return "Repository synced successfully!";
+                      return `Successfully synced ${data.syncedCount} open PRs!`;
                     },
                     error: (err) => `Sync failed: ${err.message}`,
                   });
@@ -81,20 +81,31 @@ export default function Home() {
               )}
             </button>
           </div>
-
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Engineer Workload</h2>
-          </div>
           
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Engineer Workload</h2>
+            
+            {loadScores && (
+              <div className="flex gap-3 mt-3 sm:mt-0 text-xs font-medium text-slate-600">
+                <span className="bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-sm">
+                  {loadScores.totalPRs} Tracked PRs
+                </span>
+                <span className="bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-sm">
+                  {loadScores.totalReviewers} Active Reviewers
+                </span>
+              </div>
+            )}
+          </div>
+
           <div className="divide-y divide-slate-100">
             {isLoading ? (
               <div className="p-12 text-center text-slate-400 text-sm animate-pulse">
                 Loading assignment data...
               </div>
-            ) : loadScores?.length === 0 ? (
+            ) : loadScores?.users.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-50 mb-4 border border-slate-100">
                   <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -105,7 +116,7 @@ export default function Home() {
                 <p className="text-slate-400 text-sm mt-1">Run a repository sync to populate the database.</p>
               </div>
             ) : (
-              loadScores?.map((user, index) => (
+              loadScores?.users.map((user, index) => (
                 <div key={user.id} className="flex items-center justify-between p-4 md:p-6 hover:bg-slate-50/50 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 text-slate-600 font-medium text-sm shadow-inner">

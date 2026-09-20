@@ -31,9 +31,6 @@ export const githubRouter = createTRPCRouter({
         
         const { success } = await rateLimit.limit(`sync_${repoFullName}`);
 
-        console.log(`[DEBUG] Syncing ${repoFullName} | Allowed by upstash`, success);
-
-
         if (!success) {
           throw new TRPCError({
             code: "TOO_MANY_REQUESTS",
@@ -42,56 +39,48 @@ export const githubRouter = createTRPCRouter({
         }
 
         const prs = await getOpenPRs(input.owner, input.repo);
-
         const uniqueReviewers = [...new Set(prs.flatMap((pr) => pr.requestedReviewers))];
 
-        await ctx.db.$transaction(
-          uniqueReviewers.map((reviewerLogin) => 
-            ctx.db.user.upsert({
-              where: { githubLogin: reviewerLogin },
-              update: {},
-              create: {
-                id: reviewerLogin,
-                githubLogin: reviewerLogin,
-              },
-            })
-          )
-        );
-
-        await ctx.db.$transaction(
-          prs.map((pr) => 
-            ctx.db.pullRequest.upsert({
-              where: { id: pr.id },
-              update: { title: pr.title },
-              create: {
-                id: pr.id,
-                repo: repoFullName,
-                title: pr.title,
-                authorLogin: pr.authorLogin,
-                openedAt: pr.openedAt,
-              },
-            })
-          )
-        );
-
-        const reviewOperations = prs.flatMap((pr) => 
-          pr.requestedReviewers.map((reviewerLogin) => 
-            ctx.db.review.upsert({
-              where: { id: `${pr.id}-${reviewerLogin}` },
-              update: {},
-              create: {
-                id: `${pr.id}-${reviewerLogin}`,
-                pullRequestId: pr.id,
-                reviewerId: reviewerLogin,
-                requestedAt: new Date(),
-              },
-            })
-          )
-        );
-
-        if (reviewOperations.length > 0) {
-          await ctx.db.$transaction(reviewOperations);
+        if (uniqueReviewers.length > 0) {
+          await ctx.db.user.createMany({
+            data: uniqueReviewers.map((login) => ({
+              id: login,
+              githubLogin: login,
+            })),
+            skipDuplicates: true,
+          });
         }
+
+        if (prs.length > 0) {
+          await ctx.db.pullRequest.createMany({
+            data: prs.map((pr) => ({
+              id: pr.id,
+              repo: repoFullName,
+              title: pr.title,
+              authorLogin: pr.authorLogin,
+              openedAt: pr.openedAt,
+            })),
+            skipDuplicates: true,
+          });
+        }
+
+        const reviewData = prs.flatMap((pr) => 
+          pr.requestedReviewers.map((reviewerLogin) => ({
+            id: `${pr.id}-${reviewerLogin}`,
+            pullRequestId: pr.id,
+            reviewerId: reviewerLogin,
+            requestedAt: new Date(),
+          }))
+        );
+
+        if (reviewData.length > 0) {
+          await ctx.db.review.createMany({
+            data: reviewData,
+            skipDuplicates: true,
+          });
+        }
+
+        return { syncedCount: prs.length };
       }),
 
     getLoadScores: publicProcedure
@@ -99,31 +88,26 @@ export const githubRouter = createTRPCRouter({
       .query(async ({ ctx, input }) => {
         const repoFullName = `${input.owner}/${input.repo}`;
 
-        const userWithScores = await ctx.db.user.findMany({
-          where: {
-            reviews: {
-              some: {
-                pullRequest: {
-                  repo: repoFullName,
-                },
-              },
+        const [userWithScores, totalPRs] = await Promise.all([
+          ctx.db.user.findMany({
+            where: {
+              reviews: { some: { pullRequest: { repo: repoFullName } } },
             },
-          },
-          include: {
-            _count: {
-              select: {
-                reviews:{
-                  where: {
-                    pullRequest: {
-                      repo: repoFullName,
-                    },
-                  },
-                },
-              },
+            include: {
+              _count: { select: { reviews: { where: { pullRequest: { repo: repoFullName } } } } },
             },
-          },
-        }); 
+          }),
+          ctx.db.pullRequest.count({
+            where: { repo: repoFullName }
+          })
+        ]) ;
 
-        return userWithScores.sort((a, b) => b._count.reviews - a._count.reviews);
+        const sortedUsers = userWithScores.sort((a, b) => b._count.reviews - a._count.reviews);
+
+        return {
+          users: sortedUsers,
+          totalPRs,
+          totalReviewers: sortedUsers.length
+        };
       }), 
 }); 
